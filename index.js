@@ -18,10 +18,8 @@ function isObject(value) {
 
 class QNeo4j {
     constructor(options = {}) {
-        this.autoCloseDriver = true;
-
         const opts = isObject(options) ? options : {};
-        this.updateOptions(opts);
+        this.updateOptions(opts, true);
     }
 
     get notifyError() {
