@@ -1,19 +1,43 @@
-const util = require("@qualitech/qneo4j-util");
-const parser = require("@qualitech/qneo4j-parser");
-const neo4j = require("neo4j-driver").v1;
+'use strict';
 
+const neo4j = require("neo4j-driver").v1;
+const helper = require("@qualitech/qneo4j-helper");
+
+// eslint-disable-next-line
 Promise.prototype.first = function() {
     return this.then(r => r && r[0]);
-}
+};
 
 const RETURN_TYPES = {
     PARSER: 0,
     PARSER_RAW: 1,
-    RAW: 2
+    RAW: 2,
 };
 
 function isObject(value) {
-    return value && typeof value === 'object'
+    return value && typeof value === 'object';
+}
+
+
+class Result {
+    constructor(rawResult) {
+        this.rawResult = rawResult;
+        this.value = helper.parseResponse(rawResult.records);
+    }
+
+    get rawResult() {
+        return this._rawResult;
+    }
+    set rawResult(value) {
+        this._rawResult = value;
+    }
+
+    get value() {
+        return this._value;
+    }
+    set value(value) {
+        this._value = value;
+    }
 }
 
 class QNeo4j {
@@ -71,7 +95,7 @@ class QNeo4j {
     }
 
     set autoCloseDriver(value) {
-        this._autoCloseDriver = (typeof value === 'boolean') ? value : true;
+        this._autoCloseDriver = typeof value === 'boolean' ? value : true;
     }
 
     get globalDriver() {
@@ -128,7 +152,7 @@ class QNeo4j {
             const execute = (queryOpt, opts) => {
                 _queryOpt = queryOpt;
                 return this._run(tx, queryOpt, opts);
-            }
+            };
 
             const result = await blockTransaction(execute, tx);
 
@@ -151,25 +175,24 @@ class QNeo4j {
     _run(sessionOrTransaction, queryOpt, opts) {
         if (!queryOpt) return;
 
-        if (!Array.isArray(queryOpt)) queryOpt = [queryOpt];
-
-        if (!opts) opts = { returnType: RETURN_TYPES.PARSER };
+        const _queryOpt = Array.isArray(queryOpt) ? queryOpt : [queryOpt];
+        const _opts = opts || {returnType: RETURN_TYPES.PARSER};
 
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
-        let promises = queryOpt.map((query) => {
+        let promises = _queryOpt.map((query) => {
             if (isObject(query)) {
                 return sessionOrTransaction.run(query.cypher, query.params);
-            } else {
-                return sessionOrTransaction.run(query);
             }
-        })
+
+            return sessionOrTransaction.run(query);
+        });
 
         // BUILD RETURN TYPE
-        let resultFull = (p) => p.then(result => new Result(result));
-        let resultParser = (p) => p.then(result => new Result(result).value);
+        const resultFull = (p) => p.then(result => new Result(result));
+        const resultParser = (p) => p.then(result => new Result(result).value);
 
-        if (!this.raw && !this._returnTypeIsRaw(opts)) {
-            if (opts.returnType === RETURN_TYPES.PARSER_RAW) {
+        if (!this.raw && !this._returnTypeIsRaw(_opts)) {
+            if (_opts.returnType === RETURN_TYPES.PARSER_RAW) {
                 promises = promises.map(resultFull);
             } else {
                 promises = promises.map(resultParser);
@@ -187,41 +210,16 @@ class QNeo4j {
     createDriver() {
         const auth = neo4j.auth.basic(this.username, this.password);
         return neo4j.driver(this.url, auth, {
-            disableLosslessIntegers: true
+            disableLosslessIntegers: true,
         });
-    }
-
-    closeDriver() {
-        this.globalDriver.close();
     }
 
     _returnTypeIsRaw(options) {
         return options && options.returnType === RETURN_TYPES.RAW;
     }
-};
-
-class Result {
-    constructor(rawResult) {
-        this.rawResult = rawResult;
-        this.value = parser(rawResult.records);
-    }
-
-    get rawResult() {
-        return this._rawResult;
-    }
-    set rawResult(value) {
-        this._rawResult = value;
-    }
-
-    get value() {
-        return this._value;
-    }
-    set value(value) {
-        this._value = value;
-    }
-};
+}
 
 module.exports = QNeo4j;
 module.exports.Result = Result;
 module.exports.RETURN_TYPES = RETURN_TYPES;
-module.exports.util = util;
+module.exports.helper = helper;

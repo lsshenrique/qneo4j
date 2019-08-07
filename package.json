@@ -4,6 +4,7 @@
     "description": "A layer under the Neo4J driver with additional features to help queries, transaction and response parser.",
     "main": "index.js",
     "scripts": {
+        "eslint": "eslint -c .eslintrc ./",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
@@ -22,8 +23,10 @@
     },
     "homepage": "https://github.com/lsshenrique/qneo4j#readme",
     "dependencies": {
-        "@qualitech/qneo4j-parser": "0.0.1",
-        "@qualitech/qneo4j-util": "0.0.1",
+        "@qualitech/qneo4j-helper": "^0.1.1",
         "neo4j-driver": "^1.7.5"
+    },
+    "devDependencies": {
+        "eslint": "^6.1.0"
     }
 }
