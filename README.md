@@ -3,7 +3,9 @@ A layer under the Neo4J driver with additional features to help queries, transac
 
 ## Installation
 Using npm:
-    $ npm i @qualitech/qneo4j
+```shell
+$ npm i @qualitech/qneo4j
+```
 
 ## Usage
 Create QNeo4j instance:
@@ -32,7 +34,7 @@ const db = new QNeo4j({
 })
 ```
   
-### We can execute a cypher query in the following ways:
+#### Executing a cypher query
 The simplest way:
 ```javascript
 // Promise
@@ -64,7 +66,7 @@ result[0].person.name === 'Alice'
 result[1].person.name === 'Bob'
 ```
 
-Executing multiple cypher queries through an array. The result will be an array containing the value of your query:
+Executing multiple cypher queries through an array. The result will be an array containing the value of its query:
 ```javascript
 const queries = [
     'CREATE (p:Person {name: "Bob"}) return p', 
@@ -102,7 +104,7 @@ db.transaction(async function (execute, tx){
 ```
 - The transaction method returns a Promise;
 - If you want to return any value to Promise, simply return the value within the transaction scope, so the value is sent to the Promise;
-- At the end of the transaction scope, if all went well, the commit is automatically performed otherwise, if there are any unhandled exceptions the rollback is performed. You can also manually perfom the rollback using the given parameter "tx" by calling tx.rollback(). 
+- At the end of the transaction scope, if all went well, the commit will be automatically performed, if there are unhandled exceptions the rollback is performed. You can also manually perfom the rollback using the given parameter `tx` by calling `tx.rollback()`. 
 
 To get the raw return of Neo4j just apply some of the settings:
 ```javascript
@@ -120,17 +122,17 @@ db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.PAR
 ```
 
 ## Methods
-### createDriver
-Creates a Neo4j driver from the informed authentication when instantiating the QNeo4j class. The createDriver method is used internally.
+#### createDriver
+Creates a Neo4j driver with the informed authentication when instantiating the QNeo4j class. The createDriver method is used internally.
 
-### execute
+#### execute
 Executes a cypher query and returns a Promise with the query result. See the examples that were mentioned in the documentation above.
 
-### transaction
+#### transaction
 Can executes various operations within a transactional scope, when this scope is completed commit is performed otherwise, if there are unhandled exceptions the rollback is performed. See the examples that were mentioned in the documentation above.
 
-### updateOptions 
-Update instance options QNeo4j
+#### updateOptions 
+Update the QNeo4j instance options
 ```javascript
 let db = new QNeo4j()
 
@@ -145,18 +147,18 @@ db.updateOptions({
 ```
 
 ## Other Resources
-### Result Class
-In some cases we will have the Result class as return from an execute method, such as when we return the raw and parsed result, this data is available through the rawResult properties and value.
+#### Result Class
+In some cases we will have the `Result` class as return from an execute method, such as when we return the raw and parsed result, this data is available through the `rawResult` properties and `value`.
 ```javascript
 db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.PARSER_RAW })
     .then(result => {
         console.log(result instanceOf QNeo4j.Result) // true
-        console.log(result.rawResult)    // raw result of the Neo4j
-        console.log(result.value)        // parsed result
+		console.log(result.rawResult) 	// raw result of the Neo4j
+        console.log(result.value)        	// parsed result
     })
 ```
-### RETURN_TYPES Constant 
-The RETURN_TYPES constant is available on QNeo4j.RETURN_TYPES, it contains the options that specify how it will be the return type (raw, parsed or both).
+#### RETURN_TYPES constant 
+The `RETURN_TYPES` constant is available on `QNeo4j.RETURN_TYPES`, it contains the options that specify how it will be the return type (raw, parsed or both).
 ```javascript
 const QNeo4j = require('@qualitech/qneo4j')
 const { RETURN_TYPES } = QNeo4j
@@ -169,6 +171,5 @@ console.log(RETURN_TYPES)
 // }
 ```
 
-### Modulo QHelper
-The qneo4j-helper module is accessible from QNeo4j.helper and provides useful methods that help you work with cypher query and neo4j driver. See more in the module's own documentation:
-https://www.npmjs.com/package/@qualitech/qneo4j-helper
+#### Modulo QHelper
+The `qneo4j-helper` module is accessible from `QNeo4j.helper` and provides useful methods that help you work with cypher query and neo4j driver. See more in the module's own [documentation](https://www.npmjs.com/package/@qualitech/qneo4j-helper "documentation").
