@@ -1,6 +1,6 @@
 {
     "name": "@qualitech/qneo4j",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A layer under the Neo4J driver with additional features to help queries, transaction and response parser.",
     "main": "index.js",
     "scripts": {
