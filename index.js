@@ -80,11 +80,11 @@ class QNeo4j {
     }
 
     get driverConfig() {
-        return this.driverConfig;
+        return this._driverConfig;
     }
 
     set driverConfig(value) {
-        this.driverConfig = value;
+        this._driverConfig = value;
     }
 
     get password() {
@@ -187,7 +187,7 @@ class QNeo4j {
         if (!queryOpt) return;
 
         const _queryOpt = Array.isArray(queryOpt) ? queryOpt : [queryOpt];
-        const _opts = opts || {returnType: RETURN_TYPES.PARSER};
+        const _opts = opts || { returnType: RETURN_TYPES.PARSER };
 
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
