@@ -79,6 +79,14 @@ class QNeo4j {
             this._username = 'neo4j';
     }
 
+    get driverConfig() {
+        return this.driverConfig;
+    }
+
+    set driverConfig(value) {
+        this.driverConfig = value;
+    }
+
     get password() {
         return this._password;
     }
@@ -123,6 +131,9 @@ class QNeo4j {
 
         if (options.autoCloseDriver || reset)
             this.autoCloseDriver = options.autoCloseDriver;
+
+        if (options.driverConfig || reset)
+            this.driverConfig = options.driverConfig;
     }
 
     async execute(queryOpt, opts) {
@@ -209,8 +220,10 @@ class QNeo4j {
 
     createDriver() {
         const auth = neo4j.auth.basic(this.username, this.password);
+
         return neo4j.driver(this.url, auth, {
             disableLosslessIntegers: true,
+            ...this.driverConfig,
         });
     }
 

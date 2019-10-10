@@ -24,7 +24,7 @@
     "homepage": "https://github.com/lsshenrique/qneo4j#readme",
     "dependencies": {
         "@qualitech/qneo4j-helper": "^0.2.2",
-        "neo4j-driver": "^1.7.5"
+        "neo4j-driver": "^1.7.6"
     },
     "devDependencies": {
         "eslint": "^6.3.0"

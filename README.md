@@ -31,6 +31,11 @@ const db = new QNeo4j({
 
     // description: expects to receive a callback function. This callback is called every time an error occurs within the QNeo4j module.
     notifyError: (error, query) => console.log(error, query),
+    
+    // description: all configuration available to the driver Neo4j can be set here. See more https://neo4j.com/docs/driver-manual/current/client-applications/
+    driverConfig: {
+        // ... neo4j driver configuration
+    }
 })
 ```
   
