@@ -192,6 +192,7 @@ class QNeo4j {
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
             if (isObject(query)) {
+                normalizeParams(query.params);
                 return sessionOrTransaction.run(query.cypher, query.params);
             }
 
@@ -216,6 +217,16 @@ class QNeo4j {
 
         // AWAITS ALL PROMISES
         return Promise.all(promises);
+    }
+
+    normalizeParams(params) {
+        if (!params) return
+
+        for (const key of params) {
+            if (typeof params[key] === 'number') {
+                params[key] = neo4j.int(params[key])
+            }
+        }
     }
 
     createDriver() {
