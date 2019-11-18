@@ -222,7 +222,7 @@ class QNeo4j {
     normalizeParams(params) {
         if (!params) return
 
-        for (const key of params) {
+        for (const key in params) {
             if (typeof params[key] === 'number') {
                 params[key] = neo4j.int(params[key])
             }
