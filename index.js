@@ -192,7 +192,7 @@ class QNeo4j {
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
             if (isObject(query)) {
-                normalizeParams(query.params);
+                this.normalizeParams(query.params);
                 return sessionOrTransaction.run(query.cypher, query.params);
             }
 
