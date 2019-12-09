@@ -225,7 +225,7 @@ class QNeo4j {
         for (const key in params) {
             if (typeof params[key] === 'number') {
                 params[key] = neo4j.int(params[key]);
-            } else if (Array.isArray(params[key])) {
+            } else if (Array.isArray(params[key]) || isObject(params[key])) {
                 this.normalizeParams(params[key]);
             }
         }
