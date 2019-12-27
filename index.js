@@ -187,7 +187,7 @@ class QNeo4j {
         if (!queryOpt) return;
 
         const _queryOpt = Array.isArray(queryOpt) ? queryOpt : [queryOpt];
-        const _opts = opts || {returnType: RETURN_TYPES.PARSER};
+        const _opts = opts || { returnType: RETURN_TYPES.PARSER };
 
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
@@ -223,7 +223,9 @@ class QNeo4j {
         if (!params) return;
 
         for (const key in params) {
-            if (typeof params[key] === 'number') {
+            if (params[key] === undefined || params[key] === Number.isNaN) {
+                params[key] = null;
+            } else if (typeof params[key] === 'number' && Number.isInteger(params[key])) {
                 params[key] = neo4j.int(params[key]);
             } else if (Array.isArray(params[key]) || isObject(params[key])) {
                 this.normalizeParams(params[key]);
