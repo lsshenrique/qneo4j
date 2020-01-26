@@ -227,7 +227,9 @@ class QNeo4j {
                 params[key] = null;
             } else if (typeof params[key] === 'number' && Number.isInteger(params[key])) {
                 params[key] = neo4j.int(params[key]);
-            } else if (Array.isArray(params[key]) || isObject(params[key])) {
+            } else if (Array.isArray(params[key])) {
+                this.normalizeParams(params[key]);
+            } else if (isObject(params[key]) && !helper.isDateTypeNeo4j(params[key])) {
                 this.normalizeParams(params[key]);
             }
         }
