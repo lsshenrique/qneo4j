@@ -23,7 +23,7 @@
     },
     "homepage": "https://github.com/lsshenrique/qneo4j#readme",
     "dependencies": {
-        "@qualitech/qneo4j-helper": "^0.2.3",
+        "@qualitech/qneo4j-helper": "^0.2.4",
         "neo4j-driver": "^1.7.6"
     },
     "devDependencies": {
