@@ -4,8 +4,23 @@ const neo4j = require("neo4j-driver").v1;
 const helper = require("@qualitech/qneo4j-helper");
 
 // eslint-disable-next-line
-Promise.prototype.first = function() {
-    return this.then(r => r && r[0]);
+Promise.prototype.first = async function(propertyReturn) {
+    const firstResult = await this.then(r => r && r[0]);
+
+    if (firstResult && propertyReturn) {
+        if (typeof propertyReturn === 'function') {
+            return propertyReturn(firstResult);
+        } else if (typeof propertyReturn === 'string') {
+            return firstResult[propertyReturn];
+        }
+    }
+
+    return firstResult;
+};
+
+// eslint-disable-next-line
+Promise.prototype.thenMap = function(fnMap) {
+    return this.then(r => r && r.map(fnMap));
 };
 
 const RETURN_TYPES = {
@@ -20,9 +35,10 @@ function isObject(value) {
 
 
 class Result {
-    constructor(rawResult) {
+    constructor(rawResult, options) {
+        this.options = options;
         this.rawResult = rawResult;
-        this.value = helper.parseResponse(rawResult.records);
+        this.value = helper.parseResponse(rawResult.records, options);
     }
 
     get rawResult() {
@@ -200,8 +216,8 @@ class QNeo4j {
         });
 
         // BUILD RETURN TYPE
-        const resultFull = (p) => p.then(result => new Result(result));
-        const resultParser = (p) => p.then(result => new Result(result).value);
+        const resultFull = (p) => p.then(result => new Result(result, _opts));
+        const resultParser = (p) => p.then(result => new Result(result, _opts).value);
 
         if (!this.raw && !this._returnTypeIsRaw(_opts)) {
             if (_opts.returnType === RETURN_TYPES.PARSER_RAW) {
