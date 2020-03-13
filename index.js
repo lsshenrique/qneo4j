@@ -2,26 +2,7 @@
 
 const neo4j = require("neo4j-driver").v1;
 const helper = require("@qualitech/qneo4j-helper");
-
-// eslint-disable-next-line
-Promise.prototype.first = async function(propertyReturn) {
-    const firstResult = await this.then(r => r && r[0]);
-
-    if (firstResult && propertyReturn) {
-        if (typeof propertyReturn === 'function') {
-            return propertyReturn(firstResult);
-        } else if (typeof propertyReturn === 'string') {
-            return firstResult[propertyReturn];
-        }
-    }
-
-    return firstResult;
-};
-
-// eslint-disable-next-line
-Promise.prototype.thenMap = function(fnMap) {
-    return this.then(r => r && r.map(fnMap));
-};
+const PromiseQNeo4j = require('./promise');
 
 const RETURN_TYPES = {
     PARSER: 0,
@@ -152,20 +133,23 @@ class QNeo4j {
             this.driverConfig = options.driverConfig;
     }
 
-    async execute(queryOpt, opts) {
+    execute(queryOpt, opts) {
         const closeDriver = this.autoCloseDriver;
         const driver = closeDriver ? this.createDriver() : this.globalDriver;
         const session = driver.session();
 
-        try {
-            return await this._run(session, queryOpt, opts);
-        } catch (error) {
-            this.notifyError(error, queryOpt);
-            throw error;
-        } finally {
-            session.close();
-            if (closeDriver) driver.close();
-        }
+        const p = this
+            ._run(session, queryOpt, opts)
+            .catch(error => {
+                this.notifyError(error, queryOpt);
+                throw error;
+            })
+            .finally(() => {
+                session.close();
+                if (closeDriver) driver.close();
+            });
+
+        return PromiseQNeo4j.convert(p);
     }
 
     async transaction(blockTransaction) {
@@ -208,8 +192,11 @@ class QNeo4j {
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
             if (isObject(query)) {
-                this.normalizeParams(query.params);
-                return sessionOrTransaction.run(query.cypher, query.params);
+                const params = helper.objClone(query.params);
+
+                this.normalizeParams(params);
+
+                return sessionOrTransaction.run(query.cypher, params);
             }
 
             return sessionOrTransaction.run(query);
