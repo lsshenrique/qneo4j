@@ -160,10 +160,6 @@
             2,
             "always"
         ],
-        "operator-linebreak": [
-            2,
-            "before"
-        ],
         "quotes": [
             0,
             "backtick",

@@ -1,8 +1,11 @@
 'use strict';
 
 const neo4j = require("neo4j-driver").v1;
-const helper = require("@qualitech/qneo4j-helper");
+const helper = require("./helper");
 const PromiseQNeo4j = require('./promise');
+
+helper.injectDateFunctions();
+helper.setGlobalOptions({ dateLocale: 'pt-br' });
 
 const RETURN_TYPES = {
     PARSER: 0,
@@ -162,7 +165,8 @@ class QNeo4j {
         try {
             const execute = (queryOpt, opts) => {
                 _queryOpt = queryOpt;
-                return this._run(tx, queryOpt, opts);
+                const p = this._run(tx, queryOpt, opts);
+                return PromiseQNeo4j.convert(p);
             };
 
             const result = await blockTransaction(execute, tx);

@@ -1,8 +1,8 @@
 {
     "name": "@qualitech/qneo4j",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "A layer under the Neo4J driver with additional features to help queries, transaction and response parser.",
-    "main": "index.js",
+    "main": "src/index.js",
     "scripts": {
         "eslint": "eslint -c .eslintrc ./",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -23,8 +23,9 @@
     },
     "homepage": "https://github.com/lsshenrique/qneo4j#readme",
     "dependencies": {
-        "@qualitech/qneo4j-helper": "^0.4.0",
-        "neo4j-driver": "^1.7.6"
+        "neo4j-driver": "^1.7.6",
+        "lodash": "^4.17.15",
+        "moment": "^2.24.0"
     },
     "devDependencies": {
         "eslint": "^6.3.0"
