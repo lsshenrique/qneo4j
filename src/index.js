@@ -2,6 +2,7 @@
 
 const neo4j = require("neo4j-driver").v1;
 const helper = require("./helper");
+const { isObject } = helper;
 const PromiseQNeo4j = require('./promise');
 
 helper.injectDateFunctions();
@@ -12,11 +13,6 @@ const RETURN_TYPES = {
     PARSER_RAW: 1,
     RAW: 2,
 };
-
-function isObject(value) {
-    return value && typeof value === 'object';
-}
-
 
 class Result {
     constructor(rawResult, options) {
@@ -195,6 +191,10 @@ class QNeo4j {
 
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
+            if (_opts.debug) {
+                console.log(helper.cypherReplaceParams(queryOpt));
+            }
+
             if (isObject(query)) {
                 const params = helper.objClone(query.params);
 

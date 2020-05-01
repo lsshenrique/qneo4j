@@ -99,6 +99,10 @@ module.exports = class QNeo4jHelper {
             Object.keys(value).some(e => ["year", "month", "day", "hour", "minute", "second"].indexOf(e) > -1);
     }
 
+    static isObject(value) {
+        return value && typeof value === 'object';
+    }
+
     static toStandardDate(value) {
         if (this.isDateTypeNeo4j(value)) {
             return dateFunctions[value.constructor.name].toStandardDate(value);
@@ -235,6 +239,29 @@ module.exports = class QNeo4jHelper {
             .replace(/\]/g, '\\\]')
             .replace(/\{/g, '\\\{')
             .replace(/\}/g, '\\\}');
+    }
+
+    static cypherReplaceParams(cql) {
+        let params = null;
+        let cypher = '';
+
+        if (_.isObject(cql)) {
+            params = cql.params;
+            cypher = cql.cypher;
+        } else {
+            cypher = cql;
+        }
+
+        if (!_.isEmpty(params)) {
+            const keys = Object.keys(params).sort((a, b) => a.length < b.length);
+
+            for (const key of keys) {
+                const regex = new RegExp(`\\$${key}`, 'g');
+                cypher = cypher.replace(regex, params[key]);
+            }
+        }
+
+        return cypher;
     }
 };
 
