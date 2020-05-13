@@ -257,7 +257,14 @@ module.exports = class QNeo4jHelper {
 
             for (const key of keys) {
                 const regex = new RegExp(`\\$${key}`, 'g');
-                cypher = cypher.replace(regex, params[key]);
+
+                if (typeof params[key] === "string") {
+                    cypher = cypher.replace(regex, `"${params[key]}"`);
+                } else if (typeof params[key] !== 'object') {
+                    cypher = cypher.replace(regex, params[key]);
+                } else {
+                    cypher = cypher.replace(regex, JSON.stringify(params[key]));
+                }
             }
         }
 
