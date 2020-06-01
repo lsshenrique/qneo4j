@@ -2,7 +2,7 @@
 
 const _ = require("lodash");
 const moment = require("moment");
-const { types } = require('neo4j-driver').v1;
+const { types } = require('neo4j-driver').default;
 
 const dateFunctions = {
     Date: {

@@ -1,6 +1,6 @@
 'use strict';
 
-const neo4j = require("neo4j-driver").v1;
+const neo4j = require("neo4j-driver").default;
 const helper = require("./helper");
 const { isObject } = helper;
 const PromiseQNeo4j = require('./promise');
