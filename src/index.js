@@ -1,5 +1,8 @@
 'use strict';
 
+// CLEANUP DRIVE ON PROCESS EXIT
+const { regiter } = require('./cleanup');
+
 const neo4j = require("neo4j-driver").default;
 const helper = require("./helper");
 const { isObject } = helper;
@@ -40,6 +43,8 @@ class QNeo4j {
     constructor(options = {}) {
         const opts = isObject(options) ? options : {};
         this.updateOptions(opts, true);
+
+        regiter(this);
     }
 
     get notifyError() {
@@ -99,7 +104,7 @@ class QNeo4j {
     }
 
     set autoCloseDriver(value) {
-        this._autoCloseDriver = typeof value === 'boolean' ? value : true;
+        this._autoCloseDriver = typeof value === 'boolean' ? value : false;
     }
 
     get globalDriver() {
@@ -143,9 +148,9 @@ class QNeo4j {
                 this.notifyError(error, queryOpt);
                 throw error;
             })
-            .finally(() => {
-                session.close();
-                if (closeDriver) driver.close();
+            .finally(async() => {
+                await session.close();
+                if (closeDriver) await driver.close();
             });
 
         return PromiseQNeo4j.convert(p);
@@ -177,9 +182,9 @@ class QNeo4j {
 
             throw error;
         } finally {
-            session.close();
+            await session.close();
 
-            if (closeDriver) driver.close();
+            if (closeDriver) await driver.close();
         }
     }
 
@@ -192,6 +197,7 @@ class QNeo4j {
         // RUN ALL QUERIES AND CREATE A PROMISE FOR EACH
         let promises = _queryOpt.map((query) => {
             if (_opts.debug) {
+                // eslint-disable-next-line no-console
                 console.log(helper.cypherReplaceParams(queryOpt));
             }
 
@@ -250,6 +256,12 @@ class QNeo4j {
             disableLosslessIntegers: true,
             ...this.driverConfig,
         });
+    }
+
+    async close() {
+        if (this._globalDriver) {
+            await this._globalDriver.close();
+        }
     }
 
     _returnTypeIsRaw(options) {
