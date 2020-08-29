@@ -27,7 +27,7 @@ const db = new QNeo4j({
     raw: false,              // default: false,
 
     // description: closes the Neo4j driver after the execute method or transaction.
-    autoCloseDriver: true,   // default: true
+    autoCloseDriver: false,   // default: false
 
     // description: expects to receive a callback function. This callback is called every time an error occurs within the QNeo4j module.
     notifyError: (error, query) => console.log(error, query),
@@ -127,16 +127,16 @@ db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.PAR
 ```
 
 ## Methods
-#### createDriver
+### createDriver
 Creates a Neo4j driver with the informed authentication when instantiating the QNeo4j class. The createDriver method is used internally.
 
-#### execute
+### execute
 Executes a cypher query and returns a Promise with the query result. See the examples that were mentioned in the documentation above.
 
-#### transaction
+### transaction
 Can executes various operations within a transactional scope, when this scope is completed commit is performed otherwise, if there are unhandled exceptions the rollback is performed. See the examples that were mentioned in the documentation above.
 
-#### updateOptions 
+### updateOptions 
 Update the QNeo4j instance options
 ```javascript
 let db = new QNeo4j()
@@ -152,17 +152,17 @@ db.updateOptions({
 ```
 
 ## Other Resources
-#### Result Class
+### Result Class
 In some cases we will have the `Result` class as return from an execute method, such as when we return the raw and parsed result, this data is available through the `rawResult` properties and `value`.
 ```javascript
 db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.PARSER_RAW })
     .then(result => {
         console.log(result instanceOf QNeo4j.Result) // true
 		console.log(result.rawResult) 	// raw result of the Neo4j
-        console.log(result.value)        	// parsed result
+        console.log(result.value)       // parsed result
     })
 ```
-#### RETURN_TYPES constant 
+### RETURN_TYPES constant 
 The `RETURN_TYPES` constant is available on `QNeo4j.RETURN_TYPES`, it contains the options that specify how it will be the return type (raw, parsed or both).
 ```javascript
 const QNeo4j = require('@qualitech/qneo4j')
@@ -176,8 +176,15 @@ console.log(RETURN_TYPES)
 // }
 ```
 
-#### Module QNeo4jHelper
+
+### Module QNeo4jHelper
 The `qneo4j-helper` module is accessible from `QNeo4j.helper` and provides useful methods that help you work with cypher query and neo4j driver.
+
+
+### Notes
+* From version 4.1 the driver is automatically closed when the node process exits
+
+------------
 
 ## QNeo4jHelper
 This module focuses on making using Neo4j for JavaScript easier by making its coding cleaner and shorter.
