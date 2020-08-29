@@ -257,13 +257,16 @@ module.exports = class QNeo4jHelper {
 
             for (const key of keys) {
                 const regex = new RegExp(`\\$${key}`, 'g');
+                const value = params[key];
 
-                if (typeof params[key] === "string") {
-                    cypher = cypher.replace(regex, `"${params[key]}"`);
-                } else if (typeof params[key] !== 'object') {
-                    cypher = cypher.replace(regex, params[key]);
+                if (typeof value === "string") {
+                    cypher = cypher.replace(regex, `"${value}"`);
+                } else if (typeof value !== 'object') {
+                    cypher = cypher.replace(regex, value);
+                } else if (value && this.isDateTypeNeo4j(value)) {
+                    cypher = cypher.replace(regex, `${value.constructor.name}("${JSON.stringify(value)}")`);
                 } else {
-                    cypher = cypher.replace(regex, JSON.stringify(params[key]));
+                    cypher = cypher.replace(regex, JSON.stringify(value));
                 }
             }
         }
