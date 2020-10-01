@@ -5,7 +5,7 @@ const drivers = [];
 function exitHandler(options, exitCode) {
     if (options.cleanup) {
         for (const driver of drivers) {
-            driver.globalDriver();
+            if (driver.close) driver.close();
         }
     }
 
