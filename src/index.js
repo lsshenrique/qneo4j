@@ -243,7 +243,7 @@ class QNeo4j {
             } else if (Array.isArray(params[key])) {
                 params[key] = [...params[key]];
                 this.normalizeParams(params[key]);
-            } else if (isObject(params[key]) && !helper.isDateTypeNeo4j(params[key])) {
+            } else if (isObject(params[key]) && !helper.isDateTypeNeo4j(params[key]) && !helper.isIntegerNeo4j(params[key])) {
                 this.normalizeParams(params[key]);
             }
         }
