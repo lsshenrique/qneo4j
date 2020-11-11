@@ -83,7 +83,7 @@ module.exports = class QNeo4jHelper {
     }
 
     static objClone(value) {
-        return _.clone(value);
+        return _.cloneDeep(value);
     }
 
     static isDateTypeNeo4j(value) {
