@@ -9,7 +9,14 @@ function exitHandler(options, exitCode) {
         }
     }
 
-    if (options.exit) process.exit();
+    if (exitCode instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.error('ERROR', exitCode);
+    }
+
+    if (options.exit) {
+        process.exit();
+    }
 }
 
 // do something when app is closing
