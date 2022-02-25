@@ -17,6 +17,10 @@ const RETURN_TYPES = {
     RAW: 2,
 };
 
+const ACCESS_MODE = {
+    READ: neo4j.session.READ,
+    WRITE: neo4j.session.WRITE
+};
 class Result {
     constructor(rawResult, options) {
         this.options = options;
@@ -140,7 +144,9 @@ class QNeo4j {
     execute(queryOpt, opts) {
         const closeDriver = this.autoCloseDriver;
         const driver = closeDriver ? this.createDriver() : this.globalDriver;
-        const session = driver.session();
+        const _accessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
+
+        const session = driver.session({ defaultAccessMode: _accessMode });
 
         const p = this
             ._run(session, queryOpt, opts)
@@ -272,4 +278,5 @@ class QNeo4j {
 module.exports = QNeo4j;
 module.exports.Result = Result;
 module.exports.RETURN_TYPES = RETURN_TYPES;
+module.exports.ACCESS_MODE = ACCESS_MODE;
 module.exports.helper = helper;

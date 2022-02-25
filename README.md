@@ -93,6 +93,17 @@ db.execute({ cypher: cypher, params: params}).then(result => {
 })
 ```
 
+Executing a cypher query with its parameters e Access Mode (Default: ACCESS_MODE.WRITE):
+```javascript
+const cypher = 'MATCH (p:Person {name: $name}) return p'
+const params = { name: "Bob" }
+
+db.execute({ cypher: cypher, params: params}, { accessMode: QNeo4j.ACCESS_MODE.READ }).then(result => {
+    // todo something...
+})
+```
+
+
 Through a transaction scope:
 ```javascript
 db.transaction(async function (execute, tx){

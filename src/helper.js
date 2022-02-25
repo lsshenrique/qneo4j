@@ -113,7 +113,7 @@ module.exports = class QNeo4jHelper {
                 value.day || 0,
                 value.hour || 0,
                 value.minute || 0,
-                value.second || 0
+                value.second || 0,
             );
         }
 
@@ -264,9 +264,11 @@ module.exports = class QNeo4jHelper {
                 } else if (typeof value !== 'object') {
                     cypher = cypher.replace(regex, value);
                 } else if (value && this.isDateTypeNeo4j(value)) {
-                    cypher = cypher.replace(regex, `${value.constructor.name}("${JSON.stringify(value)}")`);
+                    const json = JSON.stringify(value).replace(/"([^"]+)":/g, '$1:');
+                    cypher = cypher.replace(regex, `${value.constructor.name}("${json}")`);
                 } else {
-                    cypher = cypher.replace(regex, JSON.stringify(value));
+                    const json = JSON.stringify(value).replace(/"([^"]+)":/g, '$1:');
+                    cypher = cypher.replace(regex, json);
                 }
             }
         }
