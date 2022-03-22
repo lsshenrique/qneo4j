@@ -40,6 +40,11 @@ const DATE_TYPE = {
     DATE_TIME: types.DateTime,
 };
 
+const ACCESS_MODE = {
+    READ: neo4j.session.READ,
+    WRITE: neo4j.session.WRITE,
+};
+
 function injectDateFunctions() {
     for (const typeName in dateFunctions) {
         if (dateFunctions.hasOwnProperty(typeName)) {
@@ -275,6 +280,11 @@ module.exports = class QNeo4jHelper {
 
         return cypher;
     }
+
+    static isRouteTableError(error) {
+        return error.code === 'ServiceUnavailable' &&
+            error.message.indexOf('Could not perform discovery. No routing servers available');
+    }
 };
 
 module.exports.injectDateFunctions = injectDateFunctions;
@@ -283,4 +293,5 @@ module.exports.setGlobalOptions = function(options) {
     if (opts.dateLocale) moment.locale(opts.dateLocale);
 };
 module.exports.DATE_TYPE = DATE_TYPE;
+module.exports.ACCESS_MODE = ACCESS_MODE;
 module.exports.dateFunctions = dateFunctions;

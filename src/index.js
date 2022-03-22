@@ -4,8 +4,9 @@
 const { regiter } = require('./cleanup');
 
 const neo4j = require("neo4j-driver").default;
+const moment = require("moment");
 const helper = require("./helper");
-const { isObject } = helper;
+const { isObject, ACCESS_MODE } = helper;
 const PromiseQNeo4j = require('./promise');
 
 helper.injectDateFunctions();
@@ -17,10 +18,7 @@ const RETURN_TYPES = {
     RAW: 2,
 };
 
-const ACCESS_MODE = {
-    READ: neo4j.session.READ,
-    WRITE: neo4j.session.WRITE
-};
+const MAX_RETRY = 3;
 class Result {
     constructor(rawResult, options) {
         this.options = options;
@@ -103,17 +101,25 @@ class QNeo4j {
             this._password = 'admin';
     }
 
-    get autoCloseDriver() {
-        return this._autoCloseDriver;
-    }
-
-    set autoCloseDriver(value) {
-        this._autoCloseDriver = typeof value === 'boolean' ? value : false;
-    }
-
     get globalDriver() {
         if (!this._globalDriver) this._globalDriver = this.createDriver();
         return this._globalDriver;
+    }
+
+    get retryHasError() {
+        return this._retryHasError;
+    }
+
+    set retryHasError(value) {
+        this._retryHasError = typeof value === 'boolean' ? value : true;
+    }
+
+    get retryDebug() {
+        return this._retryDebug;
+    }
+
+    set retryDebug(value) {
+        this._retryDebug = typeof value === 'boolean' ? value : true;
     }
 
     updateOptions(options, reset = false) {
@@ -134,37 +140,44 @@ class QNeo4j {
         if (options.notifyError || reset)
             this.notifyError = options.notifyError;
 
-        if (options.autoCloseDriver || reset)
-            this.autoCloseDriver = options.autoCloseDriver;
-
         if (options.driverConfig || reset)
             this.driverConfig = options.driverConfig;
+
+        if (options.retryHasError || reset)
+            this.retryHasError = options.retryHasError;
+
+        if (options.retryDebug || reset)
+            this.retryDebug = options.retryDebug;
     }
 
     execute(queryOpt, opts) {
-        const closeDriver = this.autoCloseDriver;
-        const driver = closeDriver ? this.createDriver() : this.globalDriver;
-        const _accessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
+        const driver = this.globalDriver;
 
-        const session = driver.session({ defaultAccessMode: _accessMode });
+        const accessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
+        const session = driver.session({ defaultAccessMode: accessMode });
 
-        const p = this
-            ._run(session, queryOpt, opts)
+        let promisseResult = null;
+
+        if (this.retryHasError) {
+            promisseResult = this._runRetry(session, queryOpt, opts);
+        } else {
+            promisseResult = this._run(session, queryOpt, opts);
+        }
+
+        promisseResult = promisseResult
             .catch(error => {
                 this.notifyError(error, queryOpt);
                 throw error;
             })
             .finally(async() => {
                 await session.close();
-                if (closeDriver) await driver.close();
             });
 
-        return PromiseQNeo4j.convert(p);
+        return PromiseQNeo4j.convert(promisseResult);
     }
 
     async transaction(blockTransaction) {
-        const closeDriver = this.autoCloseDriver;
-        const driver = closeDriver ? this.createDriver() : this.globalDriver;
+        const driver = this.globalDriver;
         const session = driver.session();
         const tx = session.beginTransaction();
         let _queryOpt = null;
@@ -236,6 +249,29 @@ class QNeo4j {
 
         // AWAITS ALL PROMISES
         return Promise.all(promises);
+    }
+
+    async _runRetry(sessionOrTransaction, queryOpt, opts) {
+        let retry = 0;
+
+        while (retry < MAX_RETRY) {
+            try {
+                return await this._run(sessionOrTransaction, queryOpt, opts);
+            } catch (error) {
+                if (helper.isRouteTableError(error) && retry < MAX_RETRY) {
+                    retry++;
+
+                    if (this.retryDebug) {
+                        // eslint-disable-next-line no-console
+                        console.debug(`${moment().format("DD/MM/YYYY HH:mm:ss")} [QNEO4J] - RETRY EXECUTED - ${error.code}, ${error.message}`);
+                    }
+
+                    this.notifyError(error, queryOpt);
+                } else {
+                    throw error;
+                }
+            }
+        }
     }
 
     normalizeParams(params) {

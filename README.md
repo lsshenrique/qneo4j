@@ -24,10 +24,13 @@ const db = new QNeo4j({
     password: 'admin',       // default: 'admin'
     
     // description: if true, returns raw value of the Neo4j.
-    raw: false,              // default: false,
+    raw: false,              // default: false
 
-    // description: closes the Neo4j driver after the execute method or transaction.
-    autoCloseDriver: false,   // default: false
+    // description: if there is any error (already mapped) when executing query/transaction the operation is re-executed.
+    retryHasError: true  // default: false
+    
+    // display messages about the retry
+    retryDebug: true                // default: false
 
     // description: expects to receive a callback function. This callback is called every time an error occurs within the QNeo4j module.
     notifyError: (error, query) => console.log(error, query),
@@ -157,7 +160,8 @@ db.updateOptions({
     username: 'neo4j',       
     password: 'admin',       
     raw: false,              
-    autoCloseDriver: true,   
+    retryHasError: true,   
+    retryDebug: true,   
     notifyError: (error, query) => console.log(error, query),
 })
 ```
