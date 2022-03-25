@@ -23,7 +23,7 @@
     },
     "homepage": "https://github.com/lsshenrique/qneo4j#readme",
     "dependencies": {
-        "lodash": "4.17.20",
+        "lodash": "4.17.21",
         "moment": "2.27.0",
         "neo4j-driver": "4.4.4"
     },
