@@ -19,7 +19,7 @@ const RETURN_TYPES = {
 
 const ACCESS_MODE = {
     READ: neo4j.session.READ,
-    WRITE: neo4j.session.WRITE
+    WRITE: neo4j.session.WRITE,
 };
 class Result {
     constructor(rawResult, options) {
@@ -103,14 +103,6 @@ class QNeo4j {
             this._password = 'admin';
     }
 
-    get autoCloseDriver() {
-        return this._autoCloseDriver;
-    }
-
-    set autoCloseDriver(value) {
-        this._autoCloseDriver = typeof value === 'boolean' ? value : false;
-    }
-
     get globalDriver() {
         if (!this._globalDriver) this._globalDriver = this.createDriver();
         return this._globalDriver;
@@ -134,16 +126,12 @@ class QNeo4j {
         if (options.notifyError || reset)
             this.notifyError = options.notifyError;
 
-        if (options.autoCloseDriver || reset)
-            this.autoCloseDriver = options.autoCloseDriver;
-
         if (options.driverConfig || reset)
             this.driverConfig = options.driverConfig;
     }
 
     execute(queryOpt, opts) {
-        const closeDriver = this.autoCloseDriver;
-        const driver = closeDriver ? this.createDriver() : this.globalDriver;
+        const driver = this.globalDriver;
         const _accessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
 
         const session = driver.session({ defaultAccessMode: _accessMode });
@@ -156,42 +144,125 @@ class QNeo4j {
             })
             .finally(async() => {
                 await session.close();
-                if (closeDriver) await driver.close();
             });
 
         return PromiseQNeo4j.convert(p);
     }
 
-    async transaction(blockTransaction) {
-        const closeDriver = this.autoCloseDriver;
-        const driver = closeDriver ? this.createDriver() : this.globalDriver;
-        const session = driver.session();
-        const tx = session.beginTransaction();
+    readTransaction(queryOrBlockTransaction, transactionConfig) {
         let _queryOpt = null;
+        let work = null;
 
-        try {
-            const execute = (queryOpt, opts) => {
-                _queryOpt = queryOpt;
-                const p = this._run(tx, queryOpt, opts);
-                return PromiseQNeo4j.convert(p);
+        const executeGeneric = (sessionOrTransaction, queryOpt, opts) => {
+            _queryOpt = queryOpt;
+            const p = this._run(sessionOrTransaction, queryOpt, opts);
+            return PromiseQNeo4j.convert(p);
+        };
+
+        if (typeof queryOrBlockTransaction === 'function') {
+            const blockTransaction = queryOrBlockTransaction;
+
+            work = (txc) => {
+                const execute = (queryOpt, opts) => executeGeneric(txc, queryOpt, opts);
+                return blockTransaction(execute, txc);
             };
 
-            const result = await blockTransaction(execute, tx);
-
-            if (tx.isOpen()) await tx.commit();
-
-            return result;
-        } catch (error) {
-            this.notifyError(error, _queryOpt);
-
-            if (tx.isOpen()) await tx.rollback();
-
-            throw error;
-        } finally {
-            await session.close();
-
-            if (closeDriver) await driver.close();
+        } else {
+            const queryOpt = queryOrBlockTransaction;
+            const opts = transactionConfig;
+            work = (txc) => executeGeneric(txc, queryOpt, opts);
         }
+
+        const session = this.globalDriver.session();
+
+        const p = session
+            .readTransaction(work, transactionConfig)
+            .catch(error => {
+                this.notifyError(error, _queryOpt);
+                throw error;
+            })
+            .finally(async() => {
+                await session.close();
+            });
+
+        return PromiseQNeo4j.convert(p);
+    }
+
+    writeTransaction(queryOrBlockTransaction, transactionConfig) {
+        let _queryOpt = null;
+
+        let work = null;
+        const executeGeneric = (sessionOrTransaction, queryOpt, opts) => {
+            _queryOpt = queryOpt;
+            const p = this._run(sessionOrTransaction, queryOpt, opts);
+            return PromiseQNeo4j.convert(p);
+        };
+
+        if (typeof queryOrBlockTransaction === 'function') {
+            const blockTransaction = queryOrBlockTransaction;
+
+            work = (txc) => {
+                const execute = (queryOpt, opts) => executeGeneric(txc, queryOpt, opts);
+                return blockTransaction(execute, txc);
+            };
+
+        } else {
+            const queryOpt = queryOrBlockTransaction;
+            const opts = transactionConfig;
+            work = (txc) => executeGeneric(txc, queryOpt, opts);
+        }
+
+        const session = this.globalDriver.session();
+
+        const p = session
+            .writeTransaction(work, transactionConfig)
+            .catch(error => {
+                this.notifyError(error, _queryOpt);
+                throw error;
+            })
+            .finally(async() => {
+                await session.close();
+            });
+
+        return PromiseQNeo4j.convert(p);
+    }
+
+    transaction(queryOrBlockTransaction, transactionConfig) {
+        const session = this.globalDriver.session();
+        const tx = session.beginTransaction();
+        let _queryOpt = null;
+        let promiseExecute = null;
+
+        const execute = (queryOpt, opts) => {
+            _queryOpt = queryOpt;
+            const p = this._run(tx, queryOpt, opts);
+            return PromiseQNeo4j.convert(p);
+        };
+
+        if (typeof queryOrBlockTransaction === 'function') {
+            promiseExecute = queryOrBlockTransaction(execute, tx);
+        } else {
+            promiseExecute = execute(queryOrBlockTransaction, transactionConfig);
+        }
+
+        const p = promiseExecute
+            .then(async(result) => {
+                if (tx.isOpen()) await tx.commit();
+
+                return result;
+            })
+            .catch(async error => {
+                this.notifyError(error, _queryOpt);
+
+                if (tx.isOpen()) await tx.rollback();
+
+                throw error;
+            })
+            .finally(async() => {
+                await session.close();
+            });
+
+        return PromiseQNeo4j.convert(p);
     }
 
     _run(sessionOrTransaction, queryOpt, opts) {
