@@ -34,9 +34,13 @@ class PromiseQNeo4j extends Promise {
     }
 
     static convert(promise, props) {
-        Reflect.setPrototypeOf(promise, PromiseQNeo4j.prototype);
+        if (promise instanceof Promise || promise instanceof PromiseQNeo4j) {
+            Reflect.setPrototypeOf(promise, PromiseQNeo4j.prototype);
 
-        return props ? Object.assign(promise, props) : promise;
+            return props ? Object.assign(promise, props) : promise;
+        }
+
+        return promise;
     }
 }
 
