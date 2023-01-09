@@ -103,6 +103,17 @@ class QNeo4j {
             this._password = 'admin';
     }
 
+    get database() {
+        return this._database;
+    }
+
+    set database(value) {
+        if (typeof value === 'string' && value.length > 0)
+            this._database = value;
+        else
+            this._database = 'neo4j';
+    }
+
     get globalDriver() {
         if (!this._globalDriver) this._globalDriver = this.createDriver();
         return this._globalDriver;
@@ -123,6 +134,9 @@ class QNeo4j {
         if (options.password || reset)
             this.password = options.password;
 
+        if (options.database || reset)
+            this.database = options.database;
+
         if (options.notifyError || reset)
             this.notifyError = options.notifyError;
 
@@ -132,9 +146,15 @@ class QNeo4j {
 
     execute(queryOpt, opts) {
         const driver = this.globalDriver;
-        const _accessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
+        const configs = {};
 
-        const session = driver.session({ defaultAccessMode: _accessMode });
+        configs.defaultAccessMode = opts && opts.accessMode ? opts.accessMode : neo4j.session.WRITE;
+
+        if (this.database) {
+            configs.database = this.database;
+        }
+
+        const session = driver.session(configs);
 
         const p = this
             ._run(session, queryOpt, opts)
@@ -173,7 +193,15 @@ class QNeo4j {
             work = (txc) => executeGeneric(txc, queryOpt, opts);
         }
 
-        const session = this.globalDriver.session();
+        const driver = this.globalDriver;
+
+        const configs = {};
+        
+        if (this.database) {
+            configs.database = this.database;
+        }
+
+        const session = driver.session(configs);
 
         const p = session
             .readTransaction(work, transactionConfig)
@@ -212,7 +240,15 @@ class QNeo4j {
             work = (txc) => executeGeneric(txc, queryOpt, opts);
         }
 
-        const session = this.globalDriver.session();
+        const driver = this.globalDriver;
+
+        const configs = {};
+        
+        if (this.database) {
+            configs.database = this.database;
+        }
+
+        const session = driver.session(configs);
 
         const p = session
             .writeTransaction(work, transactionConfig)
@@ -228,7 +264,15 @@ class QNeo4j {
     }
 
     transaction(queryOrBlockTransaction, transactionConfig) {
-        const session = this.globalDriver.session();
+        const driver = this.globalDriver;
+
+        const configs = {};
+        
+        if (this.database) {
+            configs.database = this.database;
+        }
+
+        const session = driver.session(configs);
         const tx = session.beginTransaction();
         let _queryOpt = null;
         let promiseExecute = null;
