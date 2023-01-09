@@ -111,7 +111,7 @@ class QNeo4j {
         if (typeof value === 'string' && value.length > 0)
             this._database = value;
         else
-            this._database = 'neo4j';
+            this._database = '';
     }
 
     get globalDriver() {
