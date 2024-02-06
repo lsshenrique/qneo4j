@@ -196,7 +196,7 @@ class QNeo4j {
         const driver = this.globalDriver;
 
         const configs = {};
-        
+
         if (this.database) {
             configs.database = this.database;
         }
@@ -204,7 +204,7 @@ class QNeo4j {
         const session = driver.session(configs);
 
         const p = session
-            .readTransaction(work, transactionConfig)
+            .executeRead(work, transactionConfig)
             .catch(error => {
                 this.notifyError(error, _queryOpt);
                 throw error;
@@ -243,7 +243,7 @@ class QNeo4j {
         const driver = this.globalDriver;
 
         const configs = {};
-        
+
         if (this.database) {
             configs.database = this.database;
         }
@@ -251,7 +251,7 @@ class QNeo4j {
         const session = driver.session(configs);
 
         const p = session
-            .writeTransaction(work, transactionConfig)
+            .executeWrite(work, transactionConfig)
             .catch(error => {
                 this.notifyError(error, _queryOpt);
                 throw error;
@@ -267,7 +267,7 @@ class QNeo4j {
         const driver = this.globalDriver;
 
         const configs = {};
-        
+
         if (this.database) {
             configs.database = this.database;
         }

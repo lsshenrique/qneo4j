@@ -26,9 +26,6 @@ const db = new QNeo4j({
     // description: if true, returns raw value of the Neo4j.
     raw: false,              // default: false,
 
-    // description: closes the Neo4j driver after the execute method or transaction.
-    autoCloseDriver: false,   // default: false
-
     // description: expects to receive a callback function. This callback is called every time an error occurs within the QNeo4j module.
     notifyError: (error, query) => console.log(error, query),
     
@@ -39,16 +36,16 @@ const db = new QNeo4j({
 })
 ```
   
-#### Executing a cypher query
-The simplest way:
+#### Executing a cypher query "readTransaction"
+Transaction functions are the recommended form for containing transactional units of work:
 ```javascript
 // Promise
-db.execute('MATCH (person:Person) RETURN person').then(result => {
+db.readTransaction('MATCH (person:Person) RETURN person').then(result => {
     // todo something...
 })
 
 // async/await:
-let result = await db.execute('MATCH (person:Person) RETURN person')
+let result = await db.readTransaction('MATCH (person:Person) RETURN person')
 ```
 
 The value of the execution result above would be:
@@ -71,16 +68,26 @@ result[0].person.name === 'Alice'
 result[1].person.name === 'Bob'
 ```
 
-Executing multiple cypher queries through an array. The result will be an array containing the value of its query:
+Executing multiple cypher queries with "readTransaction":
 ```javascript
-const queries = [
-    'CREATE (p:Person {name: "Bob"}) return p', 
-    'CREATE (p:Person {name: "Ana"}) return p'
-]
 
-db.execute(queries).then(result => {
-    console.log(result.length) // 2
-})
+await db.readTransaction(async function (execute) {
+    const res1 = await execute(`MATCH (p:Person {name: "Bob"}) return p'`)
+    console.log(res1.name)
+    const res2 = await execute(`MATCH (p:Person {name: "Ana"}) return p`)
+   console.log(res2.name)
+  })
+```
+
+Executing multiple cypher queries with "writeTransaction":
+```javascript
+
+await db.writeTransaction(async function (execute) {
+    const res1 = await execute(`CREATE (p:Person {name: "Bob"}) return p'`)
+    console.log(res1.name)
+    const res2 = await execute(`CREATE (p:Person {name: "Ana"}) return p`)
+   console.log(res2.name)
+  })
 ```
 
 Executing a cypher query with its parameters:
@@ -88,21 +95,28 @@ Executing a cypher query with its parameters:
 const cypher = 'CREATE (p:Person {name: $name}) return p'
 const params = { name: "Bob" }
 
-db.execute({ cypher: cypher, params: params}).then(result => {
+db.writeTransaction({ cypher: cypher, params: params}).then(result => {
     // todo something...
 })
 ```
 
-Executing a cypher query with its parameters e Access Mode (Default: ACCESS_MODE.WRITE):
+Auto-commit transactions (or implicit transactions), used for 'CALL {} IN TRANSACTIONS':
+An auto-commit transaction, or implicit transaction, is a basic but limited form of transaction. Such a transaction consists of only one Cypher query and is not automatically retried on failure. Therefore, any error scenarios will need to be handled by the client application itself.
+
+Auto-commit transactions serve two purposes:
+ - simple use cases such as when learning Cypher or writing one-off scripts.
+ - operations such as batched data load operations, where the driver cannot be aware of the committed state and therefore cannot safely request a retry. The operator will have to perform a retry or undo under these circumstances.
 ```javascript
-const cypher = 'MATCH (p:Person {name: $name}) return p'
-const params = { name: "Bob" }
+const cypher = 
+        `MATCH (p:Person)
+         CALL {
+         WITH p
+            set p.update = timestamp()
+         }
+         IN TRANSACTIONS OF 1000 ROWS`
 
-db.execute({ cypher: cypher, params: params}, { accessMode: QNeo4j.ACCESS_MODE.READ }).then(result => {
-    // todo something...
-})
+let result = await db.execute(cypher)
 ```
-
 
 Through a transaction scope:
 ```javascript
@@ -137,12 +151,31 @@ db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.RAW
 db.execute('MATCH (person:Person) RETURN person', { raw: QNeo4j.RETURN_TYPES.PARSER_RAW })
 ```
 
+## Transaction functions
+Transaction functions are the recommended form for containing transactional units of work. This form of transaction requires minimal boilerplate code and allows for a clear separation of database queries and application logic. Transaction functions are also desirable since they encapsulate retry logic and allow for the greatest degree of flexibility when swapping out a single instance of server for a cluster.
+
+Functions can be called as either read or write operations. This choice will route the transaction to an appropriate server within a clustered environment. If you are in a single instance environment, this routing has no impact but it does give you the flexibility should you choose to later adopt a clustered environment.
+
+Before writing a transaction function it is important to ensure that any side-effects carried out by a transaction function should be designed to be idempotent. This is because a function may be executed multiple times if initial runs fail.
+
+Any query results obtained within a transaction function should be consumed within that function, as connection-bound resources cannot be managed correctly when out of scope. To that end, transaction functions can return values but these should be derived values rather than raw results.
+
+When a transaction fails, the driver retry logic is invoked. For several failure cases, the transaction can be immediately retried against a different server.
+
+These cases include connection issues, server role changes (e.g. leadership elections) and transient errors. Retry logic can be configured when creating a session.
+
 ## Methods
 ### createDriver
 Creates a Neo4j driver with the informed authentication when instantiating the QNeo4j class. The createDriver method is used internally.
 
 ### execute
-Executes a cypher query and returns a Promise with the query result. See the examples that were mentioned in the documentation above.
+Executes a cypher query and returns a Promise with the query result, is a basic but limited form of transaction. See the examples that were mentioned in the documentation above.
+
+### readTransaction - Transaction functions
+Executes a cypher query with transaction (read) and returns a Promise with the query result, is a basic but limited form of transaction. See the examples that were mentioned in the documentation above.
+
+### writeTransaction - Transaction functions
+Executes a cypher query with transaction (write) and returns a Promise with the query result, is a basic but limited form of transaction. See the examples that were mentioned in the documentation above.
 
 ### transaction
 Can executes various operations within a transactional scope, when this scope is completed commit is performed otherwise, if there are unhandled exceptions the rollback is performed. See the examples that were mentioned in the documentation above.
@@ -157,7 +190,6 @@ db.updateOptions({
     username: 'neo4j',       
     password: 'admin',       
     raw: false,              
-    autoCloseDriver: true,   
     notifyError: (error, query) => console.log(error, query),
 })
 ```
@@ -194,6 +226,7 @@ The `qneo4j-helper` module is accessible from `QNeo4j.helper` and provides usefu
 
 ### Notes
 * From version 4.1 the driver is automatically closed when the node process exits
+* From version 5.0: Updated the neo4j native driver to version "5.17.0"
 
 ------------
 
