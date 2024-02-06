@@ -174,7 +174,7 @@ Executes a cypher query and returns a Promise with the query result, is a basic 
 ### readTransaction - Transaction functions
 Executes a cypher query with transaction (read) and returns a Promise with the query result, is a basic but limited form of transaction. See the examples that were mentioned in the documentation above.
 
-### readTransaction - Transaction functions
+### writeTransaction - Transaction functions
 Executes a cypher query with transaction (write) and returns a Promise with the query result, is a basic but limited form of transaction. See the examples that were mentioned in the documentation above.
 
 ### transaction
